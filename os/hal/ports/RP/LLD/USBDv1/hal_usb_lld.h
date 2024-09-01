@@ -27,16 +27,9 @@
 
 #if HAL_USE_USB || defined(__DOXYGEN__)
 
-#include "rp2040_usb.h"
-
 /*===========================================================================*/
 /* Driver constants.                                                         */
 /*===========================================================================*/
-
-/**
- * @brief   Maximum endpoint address.
- */
-#define USB_MAX_ENDPOINTS                   USB_ENDOPOINTS_NUMBER
 
 /**
  * @brief   Status stage handling method.
@@ -52,6 +45,9 @@
  * @brief   This device requires the address change after the status packet.
  */
 #define USB_SET_ADDRESS_MODE                USB_LATE_SET_ADDRESS
+
+#define usb_hw_set    ((usb_hw_t *) hw_set_alias_untyped(usb_hw))
+#define usb_hw_clear  ((usb_hw_t *) hw_clear_alias_untyped(usb_hw))
 
 /*===========================================================================*/
 /* Driver pre-compile time settings.                                         */
@@ -365,7 +361,7 @@ struct USBDriver {
  * @notapi
  */
 #define usb_lld_get_frame_number(usbp)                                      \
-  (USB->SOFRD & USB_SOF_RD_COUNT_Msk)
+  (usb_hw->sofrd & USB_SOF_RD_COUNT_BITS)
 
 /**
  * @brief   Returns the exact size of a receive transaction.
@@ -392,7 +388,7 @@ struct USBDriver {
 #if !defined(usb_lld_connect_bus)
 #define usb_lld_connect_bus(usbp)                                           \
   do {                                                                      \
-    USB->SET.SIECTRL = USB_SIE_CTRL_PULLUP_EN;                              \
+    usb_hw_set->sie_ctrl = USB_SIE_CTRL_PULLUP_EN_BITS;                     \
   } while (false)
 #endif
 
@@ -404,7 +400,7 @@ struct USBDriver {
 #if !defined(usb_lld_disconnect_bus)
 #define usb_lld_disconnect_bus(usbp)                                        \
   do {                                                                      \
-    USB->CLR.SIECTRL = USB_SIE_CTRL_PULLUP_EN;                              \
+    usb_hw_clear->sie_ctrl = USB_SIE_CTRL_PULLUP_EN_BITS;                   \
   } while (false)
 #endif
 
@@ -417,8 +413,8 @@ struct USBDriver {
   do {                                                                      \
     /* remote wakeup doesn't trigger the wakeup interrupt, therefore        \
      * we use the SOF interrupt to detect resume of the bus. */             \
-    USB->INTE |= USB_INTE_DEV_SOF;                                          \
-    USB->SET.SIECTRL = USB_SIE_CTRL_RESUME;                                 \
+    usb_hw_set->inte = USB_INTE_DEV_SOF_BITS;                               \
+    usb_hw_set->sie_ctrl = USB_SIE_CTRL_RESUME_BITS;                        \
   } while (false)
 
 /*===========================================================================*/
